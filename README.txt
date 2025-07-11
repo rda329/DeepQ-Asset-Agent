@@ -1,4 +1,4 @@
-DeepQ-RL Agent Portfolio Optimization:
+DeepQ-RL Agent Asset Optimization:
 
 Goal:
 This project aims to train an optimal policy for a reinforcement learning agent with the intent to buy,sell, or hold an asset. 
