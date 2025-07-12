@@ -43,19 +43,22 @@ class DQAgent : public torch::nn::Module
 public:
 	DQAgent(Hyperparams params);
 
+	DQAgent(DQAgent& agent);
+
 	//set epsilon
 	void setEpsilon(double epsilon); 
 
 	void BuildModel(); //constructs DNN online and target model 
 	void UpdateTargetModel();
 
-	void DQAgent::Fit(torch::Tensor& state, torch::Tensor& target, int epoch); ///Trains model_1
+	void Fit(torch::Tensor& state, torch::Tensor& target, int epoch); ///Trains model_1
 	void Remember(env_result eps_result);
-	const action_amount Act(std::vector<double> state, Asset& asset);
+	const action_amount Act(std::vector<double> state, Asset asset);
 	void Replay(int batch_size);
 
-	void DQAgent::SaveModel(const std::string& filename);
-	void DQAgent::LoadModel(const std::string& filename);
+	void SaveModel(const std::string& filename);
+	void LoadModel(const std::string& filename);
+
 
 
 	const Hyperparams& getParams();
@@ -71,7 +74,7 @@ private:
 
 	Hyperparams params;
 
-	//Model member variables
+	//Model member variables get defined on Build() or Load()
 	torch::nn::Sequential online_model;
 	torch::nn::Sequential target_model; 
 	std::unique_ptr<torch::optim::Adam> optimizer_ptr;

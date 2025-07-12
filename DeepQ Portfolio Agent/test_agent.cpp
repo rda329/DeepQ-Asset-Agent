@@ -1,16 +1,20 @@
 #include "test_agent.h"
 
-void Test_Agent(const std::string saved_model_name, DQAgent& agent, Asset& asset, std::vector<StockData>& data)
+std::vector<double> Test_Agent(std::string saved_model_name, DQAgent agent, Asset asset, std::vector<StockData>& data)
 {
+	std::vector<double> daily_returns;
+
 	agent.LoadModel(saved_model_name); //loads pretrained policy
 	agent.setEpsilon(-1); //Sets exploration coefficient to less then 0 for gaurenteed exploitation. 
 
-	for (int i = 2; i < data.size(); i++)
+	for (int i = 0; i < data.size(); i++)
 	{
 		asset.updateCurrentPrice(data, i);
 		asset.updateAssetBalance(); //updates asset balance based on current price of stock
 		asset.updateReturnForecast(data, i); //computes the log return based on current price, etc
 		asset.updateHoldingNetWorth();
+
+		double original_worth = asset.getHoldingNetWorth();
 
 		std::vector<double> current_state = {
 				data[i].close,              // definitions of members can be found in access_data.h
@@ -38,6 +42,10 @@ void Test_Agent(const std::string saved_model_name, DQAgent& agent, Asset& asset
 		asset.updateReturnForecast(data, i); //computes the log return
 		asset.updateHoldingNetWorth(); //updates unspent cash + asset balance
 
-		std::cout << "Trading day: " << i << " Holding Net Worth: " << asset.getHoldingNetWorth() << std::endl;
+		double daily_return_val = (asset.getHoldingNetWorth() - original_worth) / original_worth;
+		daily_returns.push_back(daily_return_val);
+
 	}
+
+	return daily_returns;
 }

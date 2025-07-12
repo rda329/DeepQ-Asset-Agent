@@ -9,6 +9,13 @@ DQAgent::DQAgent(Hyperparams params) : params(params), update_counter(0)
     this->BuildModel();
 }
 
+DQAgent::DQAgent(DQAgent& agent)
+{
+    params = agent.params;
+    update_counter = 0;
+    this->BuildModel();
+}
+
 void DQAgent::setEpsilon(double epsilon)
 {
     params.epsilon = epsilon;
@@ -77,7 +84,7 @@ void DQAgent::Remember(env_result eps_result)
     }
 }
 
-const action_amount DQAgent::Act(std::vector<double> state, Asset& asset)
+const action_amount DQAgent::Act(std::vector<double> state, Asset asset)
 {
     action_amount agent_action;
 
@@ -96,11 +103,24 @@ const action_amount DQAgent::Act(std::vector<double> state, Asset& asset)
     else
     {
         online_model->eval();
+
         torch::Tensor state_tensor = torch::tensor(state).unsqueeze(0);
         torch::Tensor model_output = online_model->forward(state_tensor);
+
+        // DEBUG: Print all Q-values
+       /* std::cout << "Q-values for actions: [";
+        for (int i = 0; i < params.action_size; i++) {
+            double q_val = model_output[0][i].item<double>();
+            std::cout << q_val;
+            if (i < params.action_size - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;*/
+
         int best_action = model_output.argmax(1).item<int>();
         double q_value = model_output[0][best_action].item<double>();
-        
+
         if (best_action == 1) //buy
         {
             double shares_avaliable = asset.getUnspentCash() / asset.getCurrentPricePerShare();
@@ -114,10 +134,8 @@ const action_amount DQAgent::Act(std::vector<double> state, Asset& asset)
         {
             agent_action.amount = 0;
         }
-        
-        agent_action.action = best_action;
-        //Determines the amount of shares to buy/sell depending on the Q-val of the state
 
+        agent_action.action = best_action;
     }
 
     return agent_action;
@@ -157,12 +175,19 @@ void DQAgent::Replay(int batch_size) {
     std::vector<int64_t> dones_int(dones.begin(), dones.end());
     auto dones_tensor = torch::tensor(dones_int, torch::kBool);
 
+    //std::cout << "state tensors " << states_tensor << std::endl;
+
     // Compute current Q values
     auto current_q = online_model->forward(states_tensor);
+
+    //std::cout << "current_q " << current_q << std::endl;
 
     // Compute target Q values
     target_model->eval();
     auto next_q_values = target_model->forward(next_states_tensor);
+
+    //std::cout << "Next q val: " << next_q_values << std::endl;
+
     auto max_next_q = std::get<0>(next_q_values.max(1));
     auto rewards_tensor = torch::tensor(
         [&]() {
@@ -195,7 +220,6 @@ void DQAgent::Replay(int batch_size) {
             params.epsilon *= params.epsilon_decay;
         }
     }
-    
 }
 
 void DQAgent::SaveModel(const std::string& filename) {

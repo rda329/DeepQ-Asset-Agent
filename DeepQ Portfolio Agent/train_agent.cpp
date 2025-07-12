@@ -1,6 +1,6 @@
 #include "train_agent.h"
 
-std::vector<double> Train_Agent(DQAgent& agent, std::vector<StockData>& data, Asset& asset, int n_episodes, int ep_duration, double cash_devaluation_rate, std::string trained_model_file_name, double zero_return_penalty, double neg_return_penalty)
+std::vector<double> Train_Agent(DQAgent agent, std::vector<StockData>& data, Asset asset, int n_episodes, int ep_duration, double cash_devaluation_rate, std::string trained_model_file_name, double zero_return_penalty, double neg_return_penalty)
 {	
 	Asset copy_of_asset = asset;
 	
@@ -54,7 +54,7 @@ std::vector<double> Train_Agent(DQAgent& agent, std::vector<StockData>& data, As
 				asset.getReturnForecast() //gets the daily log return forecast
 		};
 
-
+		
 		//Interacting with env. to get experiences
 		for (int a = day_one; a < (ep_duration+day_one-1); a++) //Simulation ends aftrer "ep_duration" trading days 
 		{
@@ -77,11 +77,11 @@ std::vector<double> Train_Agent(DQAgent& agent, std::vector<StockData>& data, As
 					done = true;
 					if (asset.getHoldingNetWorth() == 0)
 					{
-						reward = -1*zero_return_penalty; //Penalty for 0 risk
+						reward = -1*(zero_return_penalty/100); //Penalty for 0 risk
 					}
 					else if (asset.getHoldingNetWorth() < 0)
 					{
-						reward = ((asset.getHoldingNetWorth() - init_holding_net_worth) / init_holding_net_worth) - neg_return_penalty; //penalty for going neg. return - penalty coefficient
+						reward = ((asset.getHoldingNetWorth() - init_holding_net_worth) / init_holding_net_worth) - (neg_return_penalty/100); //penalty for going neg. return - penalty coefficient
 					}
 				}
 				else
@@ -128,14 +128,14 @@ std::vector<double> Train_Agent(DQAgent& agent, std::vector<StockData>& data, As
 		if (params.memory.size() > 0)
 		{
 			//Once we are done collecting experiences we train the DNN for better decision making
-			agent.Replay(50); // batch size number of experiences needed to train DNN
+			agent.Replay(10); // batch size number of experiences needed to train DNN
 		}
 		
 
-		if (i % 500 == 0)
+		if (i % 100 == 0)
 		{
-			std::cout << "Sim: " << i << " Asset Balance: " << asset.getAssetBalance() << std::endl;
-			agent.SaveModel("train"); //periodically saving model
+			//std::cout << "Sim: " << i << " Asset Balance: " << asset.getAssetBalance() << std::endl;
+			agent.SaveModel(trained_model_file_name); //periodically saving model
 		}
 	}
 

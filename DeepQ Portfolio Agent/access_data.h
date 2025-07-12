@@ -20,4 +20,4 @@ struct StockData {
 };
 
 //Implementation found in access_data.cpp
-std::vector<StockData> readCSV(); //file path is hardcoded in function
+std::vector<StockData> readCSV(std::string& filename); 

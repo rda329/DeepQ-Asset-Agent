@@ -10,23 +10,18 @@
 
 int main() {
 
-	int n_episodes = 10000; //number of simulations
-	std::vector<StockData> data = readCSV();
-
 	//DNN architecture & hyperparams
 	Hyperparams params;
 	params.state_size = 13;
 	params.action_size = 3;
-	params.h1 = 4;
+	params.h1 = 13;
 	params.memory_capacity = 200;
 	params.epsilon = 1.0;
-	params.epsilon_min = 0.01;
-	params.epsilon_decay = 0.995;
-	params.learning_rate = 0.001;
+	params.epsilon_min = 0.0001;
+	params.epsilon_decay = 0.95;
+	params.learning_rate = 0.01;
 	params.target_update_freq = 5;
 
-
-	double uninvested_cash = 1000.00;
 
 	//Agent Interacting with Env.
 	DQAgent AAPL_agent(params);
@@ -34,6 +29,8 @@ int main() {
 	
 	Asset AAPL("AAPL", 0, 10000); //unspent cash & number of shares owned will be random. set during training of agent
 	
+
+
 	//std::vector<double> return_per_sim;
 
 	//return_per_sim = Train_Agent(AAPL_agent,data, AAPL, 1000, 20, 0.02, "trained_model");
@@ -65,6 +62,7 @@ int main() {
 
 	//hyper param tuning
 
+	/*
 	std::vector<double> zero_penalty;
 	std::vector<double> neg_penalty;
 	std::vector<double> returns_mean;
@@ -101,7 +99,56 @@ int main() {
 	else {
 		std::cerr << "Failed to save CSV." << std::endl;
 	}
+	*/
 
+	//10 Batch Cross Validation 
+	std::vector<double> batch;
+	std::vector<double> average_daily_test_returns;
+	std::vector<double> daily_test_returns_variance;
+
+	double zero_return_penalty = 1.0;
+	double neg_return_penalty = 36.0;
+
+	for (int i = 1; i < 10; i++)
+	{
+		std::string train_data_name = "train_batch_" + std::to_string(i);
+		std::string test_data_name = "test_batch_" + std::to_string(i);
+
+		auto train_data = readCSV(train_data_name);
+		auto test_data = readCSV(test_data_name);
+
+
+		
+		int length_of_sims = train_data.size();
+
+		std::vector<double> train_returns = Train_Agent(AAPL_agent, train_data, AAPL, 300, length_of_sims, 0.50, "trained_model", zero_return_penalty, neg_return_penalty);
+
+		std::vector<double> test_returns = Test_Agent("trained_model", AAPL_agent, AAPL, test_data);
+
+		double return_mean = computeAverage(test_returns);
+		double return_variance = calculateVariance(test_returns);
+
+		batch.push_back(i);
+		average_daily_test_returns.push_back(return_mean);
+		daily_test_returns_variance.push_back(return_variance);
+		std::cout << "Batch: " << i << " Processed Successfuly" << std::endl;
+	}
+
+	std::unordered_map<std::string, std::vector<double>> data3 =
+	{
+	{"Batch Number", batch},
+	{"Return Mean", average_daily_test_returns},
+	{"Return Variance", daily_test_returns_variance}
+	};
+
+	bool success = saveVectorToCSV(data3, "10 Fold Cross Validation", "../../../Data");
+
+	if (success) {
+		std::cout << "CSV saved successfully!" << std::endl;
+	}
+	else {
+		std::cerr << "Failed to save CSV." << std::endl;
+	}
 
 	return 0;
 }
