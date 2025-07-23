@@ -4,8 +4,6 @@ Goal:
 This project aims to train an optimal policy for a reinforcement learning agent with the intent to buy,sell, or hold an asset. 
 
 For the test asset AAPL the agent will make decisions based on the following states...
-- GBM 1 day Log return forecast
-
 - USA monthly CPI //Gauge consumer sentiment
 
 - Daily gold price //Gauge market uncertainty
