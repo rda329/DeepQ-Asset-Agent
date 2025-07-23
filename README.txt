@@ -18,8 +18,6 @@ data source for economic indicators
 
 https://fred.stlouisfed.org/tags/series?t=mei&ob=pv&od=desc&et=&pageID=4
 
-Note: return forecast method "updateReturnForecast" and "access_data.cpp" functions are currently hardcoded to work for only initial 5 companies for sake of simplicity in early stage of project. 
-
 
 MODEL ASSUMES NO TRANSACTION FEES ON TRADES
 
